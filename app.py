@@ -29,6 +29,7 @@ from core.patent_state import (
     load_patent_duplicate_decisions,
 )
 from core.review_state import apply_duplicate_decisions, load_duplicate_decisions
+from core.workbook_store import clear_workbook, load_workbook, save_workbook
 from ui_pages import author_mapping, data_quality, faculty_analysis, journal_quality, overview, patents, publication_details, year_analysis
 from ui_pages.theme import DASHBOARD_CSS
 
@@ -50,7 +51,7 @@ def cached_patent_parse(file_bytes: bytes) -> tuple[pd.DataFrame, pd.DataFrame, 
 def landing() -> None:
     st.title("Faculty Publication Analytics Dashboard")
     st.write("Upload the original Excel publication workbook. No preprocessing is required.")
-    st.info("The workbook remains in this browser session. Only author-name mappings are saved locally.")
+    st.info("The latest workbook is saved locally on this computer and restored when the dashboard starts.")
 
 
 def upload_control() -> None:
@@ -67,6 +68,27 @@ def upload_control() -> None:
             st.session_state.workbook_name = uploaded.name
             st.session_state.workbook_hash = digest
             st.session_state.upload_timestamp = datetime.now().astimezone()
+            save_workbook(data, uploaded.name)
+
+
+def restore_stored_workbook() -> None:
+    if "workbook_bytes" in st.session_state:
+        return
+    stored = load_workbook()
+    if stored is None:
+        return
+    data, metadata = stored
+    st.session_state.workbook_bytes = data
+    st.session_state.workbook_name = metadata["name"]
+    st.session_state.workbook_hash = metadata["hash"]
+    st.session_state.upload_timestamp = datetime.fromisoformat(metadata["uploaded_at"])
+
+
+def clear_current_workbook() -> None:
+    clear_workbook()
+    for key in ["workbook_bytes", "workbook_name", "workbook_hash", "upload_timestamp"]:
+        st.session_state.pop(key, None)
+    st.session_state.upload_version += 1
 
 
 def top_filters(frame: pd.DataFrame) -> tuple[list[int], list[str], list[str], list[str], list[str], bool]:
@@ -90,6 +112,7 @@ def top_filters(frame: pd.DataFrame) -> tuple[list[int], list[str], list[str], l
 
 landing()
 upload_control()
+restore_stored_workbook()
 
 if "workbook_bytes" not in st.session_state:
     st.stop()
@@ -99,9 +122,7 @@ try:
 except ValueError as exc:
     st.error(str(exc))
     if st.button("Choose a different workbook"):
-        for key in ["workbook_bytes", "workbook_name", "workbook_hash", "upload_timestamp"]:
-            st.session_state.pop(key, None)
-        st.session_state.upload_version += 1
+        clear_current_workbook()
         st.rerun()
     st.stop()
 
@@ -150,9 +171,7 @@ with st.sidebar:
     )
     st.divider()
     if st.button("Replace Workbook", width="stretch"):
-        for key in ["workbook_bytes", "workbook_name", "workbook_hash", "upload_timestamp"]:
-            st.session_state.pop(key, None)
-        st.session_state.upload_version += 1
+        clear_current_workbook()
         st.rerun()
 
 filter_pages = {"Overview", "Faculty Profile", "Journal Quality", "Year Analysis", "Publication Details"}

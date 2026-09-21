@@ -18,7 +18,8 @@ If Windows SmartScreen asks for confirmation, choose **More info → Run anyway*
 3. Click **Browse files** under **Upload Publication Workbook** and choose `Publications.xlsx` (or a newer workbook).
 4. Use the navigation and global filters in the left sidebar.
 5. Use **Replace Workbook** to load a newer file without changing code.
-6. When finished, close the browser tab, return to the black command window, and press **Ctrl+C**. Confirm with `Y` if Windows asks.
+6. The latest uploaded workbook is saved in the local `data/` folder and restored the next time the dashboard starts. Upload a newer workbook to replace it.
+7. When finished, close the browser tab, return to the black command window, and press **Ctrl+C**. Confirm with `Y` if Windows asks.
 
 ## Workbook behavior
 
@@ -29,6 +30,7 @@ If Windows SmartScreen asks for confirmation, choose **More info → Run anyway*
 - SCI/SCIE, ESCI, and Scopus are independent flags. Explicit `Non Scopus` is never counted as Scopus.
 - Duplicate candidates distinguish strong matches from rows requiring review. Incomplete DOI prefixes and common document URLs are not sufficient duplicate evidence.
 - Rows are never removed automatically. Duplicate include/exclude decisions are stored in `config/duplicate_review.json` and take effect only when the corresponding dashboard filter is selected.
+- The latest uploaded workbook is stored locally in `data/current_workbook.xlsx`; its filename, hash, and upload time are stored in `data/current_workbook.json`. Uploading a newer workbook replaces the stored copy.
 - User-approved author mappings are stored in `config/author_mapping.json`; manual row-level resolutions are stored in `config/unmapped_resolutions.json`. All survive restarts without altering the workbook.
 - Manual multi-faculty patent resolutions are stored in `config/patent_attribution_resolutions.json`; patent duplicate decisions are stored separately in `config/patent_duplicate_review.json`.
 
